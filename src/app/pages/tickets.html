@@ -1,0 +1,66 @@
+<header class="head">
+  <div>
+    <p class="eyebrow">{{ queue() ?? 'All queues' }}</p>
+    <h1>Tickets</h1>
+  </div>
+  <span class="muted">{{ rows().length }} shown · sorted by SLA deadline</span>
+</header>
+
+<section class="filters card" aria-label="Filters">
+  <label class="grow">Search
+    <input type="search" placeholder="Subject, customer or #id" [ngModel]="q()" (ngModelChange)="q.set($event)" />
+  </label>
+  <label>Queue
+    <select [ngModel]="queue() ?? ''" (ngModelChange)="setQueue($event)">
+      <option value="">All</option>
+      @for (x of queues; track x) { <option>{{ x }}</option> }
+    </select>
+  </label>
+  <label>Status
+    <select [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="active">Active</option>
+      <option value="all">All</option>
+      @for (s of statuses; track s) { <option [value]="s">{{ label[s] }}</option> }
+    </select>
+  </label>
+  <label>Priority
+    <select [ngModel]="priority()" (ngModelChange)="priority.set($event)">
+      <option value="">Any</option>
+      @for (p of priorities; track p) { <option [value]="p">{{ p }}</option> }
+    </select>
+  </label>
+  <label>Assignee
+    <select [ngModel]="assignee()" (ngModelChange)="assignee.set($event)">
+      <option value="">Anyone</option>
+      <option value="none">Unassigned</option>
+      @for (a of agents; track a) { <option>{{ a }}</option> }
+    </select>
+  </label>
+</section>
+
+@if (rows().length) {
+  <div class="table card" role="table" aria-label="Tickets">
+    <div class="tr th" role="row">
+      <span role="columnheader">Ticket</span><span role="columnheader">Queue</span><span role="columnheader">Priority</span>
+      <span role="columnheader">Status</span><span role="columnheader">Assignee</span><span role="columnheader">SLA</span>
+    </div>
+    @for (t of rows(); track t.id) {
+      <a class="tr" role="row" [routerLink]="['/tickets', t.id]">
+        <span class="subj" role="cell">
+          <b>{{ t.subject }}</b>
+          <small>#{{ t.id }} · {{ t.customer }} · {{ t.createdAt | date: 'MMM d, HH:mm' }}</small>
+        </span>
+        <span role="cell" class="c-queue">{{ t.queue }}</span>
+        <span role="cell"><span class="pill" [attr.data-p]="t.priority">{{ t.priority }}</span></span>
+        <span role="cell" class="c-status"><span class="st" [attr.data-st]="t.status">{{ label[t.status] }}</span></span>
+        <span role="cell" class="c-asg">{{ t.assignee ?? 'Unassigned' }}</span>
+        <span role="cell"><app-sla [ticket]="t" /></span>
+      </a>
+    }
+  </div>
+} @else {
+  <div class="card empty">
+    <h2>No tickets match</h2>
+    <p class="muted">Try clearing a filter or searching for something else.</p>
+  </div>
+}

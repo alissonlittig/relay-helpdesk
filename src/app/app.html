@@ -1,0 +1,61 @@
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+  <header class="mbar">
+    <button class="icon-btn" type="button" aria-label="Toggle menu" [attr.aria-expanded]="menu()" (click)="menu.set(!menu())">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+    </button>
+    <span class="brand"><span class="logo">R</span> Relay</span>
+    <button class="btn primary small" type="button" (click)="openDialog()">New ticket</button>
+  </header>
+
+  <aside class="side" [class.open]="menu()">
+    <div class="brand"><span class="logo">R</span> Relay <small>Helpdesk</small></div>
+    <nav aria-label="Main" (click)="menu.set(false)">
+      <a routerLink="/dashboard" routerLinkActive="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h6V4H4zM14 20h6V4h-6zM4 20h6v-3H4z" /></svg> Dashboard
+      </a>
+      <a routerLink="/tickets" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" [queryParams]="{}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v4a2 2 0 0 0 0 4v4H4v-4a2 2 0 0 0 0-4z" /></svg> All tickets
+        <span class="count">{{ store.open().length }}</span>
+      </a>
+      <p class="nav-h">Queues</p>
+      @for (q of queues; track q) {
+        <a routerLink="/tickets" [queryParams]="{ queue: q }" class="q">
+          <span class="dot" [attr.data-q]="q"></span> {{ q }}
+          <span class="count">{{ counts().get(q) ?? 0 }}</span>
+        </a>
+      }
+    </nav>
+    <div class="side-foot">
+      <button class="btn primary" type="button" (click)="openDialog()">New ticket</button>
+      <button class="link-btn" type="button" (click)="store.reset()">Reset demo data</button>
+      <p>Demo with fictional data. Everything stays in your browser.</p>
+    </div>
+  </aside>
+
+  <main id="main" tabindex="-1"><router-outlet /></main>
+</div>
+
+@if (dialog()) {
+  <div class="overlay" (click)="dialog.set(false)" (keydown.escape)="dialog.set(false)" role="presentation">
+    <form class="modal" role="dialog" aria-modal="true" aria-labelledby="nt" (click)="$event.stopPropagation()" (ngSubmit)="submit()" #f="ngForm" novalidate>
+      <h2 id="nt">New ticket</h2>
+      <label>Subject <input name="subject" [(ngModel)]="form.subject" required maxlength="120" autofocus /></label>
+      <label>Customer <input name="customer" [(ngModel)]="form.customer" required maxlength="60" /></label>
+      <div class="row2">
+        <label>Queue
+          <select name="queue" [(ngModel)]="form.queue">@for (q of queues; track q) { <option>{{ q }}</option> }</select>
+        </label>
+        <label>Priority
+          <select name="priority" [(ngModel)]="form.priority">@for (p of priorities; track p) { <option [value]="p">{{ p }}</option> }</select>
+        </label>
+      </div>
+      <label>Message <textarea name="message" rows="4" [(ngModel)]="form.message" required maxlength="1000"></textarea></label>
+      @if (f.submitted && f.invalid) { <p class="err" role="alert">Subject, customer and message are required.</p> }
+      <div class="actions">
+        <button class="btn ghost" type="button" (click)="dialog.set(false)">Cancel</button>
+        <button class="btn primary" type="submit">Create ticket</button>
+      </div>
+    </form>
+  </div>
+}

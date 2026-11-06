@@ -1,0 +1,72 @@
+<header class="head">
+  <div>
+    <p class="eyebrow">Overview</p>
+    <h1>SLA dashboard</h1>
+  </div>
+  <a routerLink="/tickets" class="btn">Open the queue</a>
+</header>
+
+<section class="kpis" aria-label="Key numbers">
+  <div class="card kpi"><span>Open tickets</span><strong>{{ store.open().length }}</strong><small>{{ unassigned() }} unassigned</small></div>
+  <div class="card kpi bad"><span>SLA breached</span><strong>{{ store.breached().length }}</strong><small>need action now</small></div>
+  <div class="card kpi warn"><span>At risk</span><strong>{{ store.atRisk().length }}</strong><small>under 25% of time left</small></div>
+  <div class="card kpi good"><span>SLA compliance</span><strong>{{ store.compliance() ?? '–' }}{{ store.compliance() === null ? '' : '%' }}</strong><small>resolved within target</small></div>
+</section>
+
+<div class="grid2">
+  <section class="card" aria-labelledby="h-q">
+    <h2 id="h-q">Open tickets by queue</h2>
+    <ul class="bars">
+      @for (r of byQueue(); track r.q) {
+        <li>
+          <a [routerLink]="['/tickets']" [queryParams]="{ queue: r.q }">{{ r.q }}</a>
+          <span class="track"><span class="fill" [style.width.%]="r.w"></span></span>
+          <b>{{ r.n }}</b>
+        </li>
+      }
+    </ul>
+
+    <h2 id="h-p" class="sp">SLA compliance by priority</h2>
+    <ul class="bars">
+      @for (r of byPriority(); track r.p) {
+        <li>
+          <span class="pill" [attr.data-p]="r.p">{{ r.p }}</span>
+          <span class="track"><span class="fill good" [style.width.%]="r.pct ?? 0"></span></span>
+          <b>{{ r.pct ?? '–' }}{{ r.pct === null ? '' : '%' }}</b>
+        </li>
+      }
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="h-w">
+    <h2 id="h-w">Last 7 days</h2>
+    <svg class="chart" viewBox="0 0 320 170" role="img" aria-label="Tickets created and resolved per day over the last seven days">
+      @for (g of [0, 1, 2, 3]; track g) {
+        <line class="gl" x1="0" x2="320" [attr.y1]="20 + g * 35" [attr.y2]="20 + g * 35" />
+      }
+      @for (d of week().days; track $index) {
+        <rect class="b1" [attr.x]="$index * 45 + 6" [attr.y]="125 - (d.created / week().max) * 105" width="14" [attr.height]="(d.created / week().max) * 105" rx="3" />
+        <rect class="b2" [attr.x]="$index * 45 + 22" [attr.y]="125 - (d.resolved / week().max) * 105" width="14" [attr.height]="(d.resolved / week().max) * 105" rx="3" />
+        <text class="ax" [attr.x]="$index * 45 + 21" y="145" text-anchor="middle">{{ d.label }}</text>
+      }
+    </svg>
+    <p class="legend"><span><i class="l1"></i>Created</span><span><i class="l2"></i>Resolved</span></p>
+  </section>
+</div>
+
+<section class="card" aria-labelledby="h-u">
+  <h2 id="h-u">Needs attention</h2>
+  <ul class="attn">
+    @for (t of urgent(); track t.id) {
+      <li>
+        <a [routerLink]="['/tickets', t.id]">
+          <span class="pill" [attr.data-p]="t.priority">{{ t.priority }}</span>
+          <span class="subj"><b>{{ t.subject }}</b><small>#{{ t.id }} · {{ t.customer }} · {{ t.assignee ?? 'Unassigned' }}</small></span>
+          <app-sla [ticket]="t" />
+        </a>
+      </li>
+    } @empty {
+      <li class="muted">Nothing urgent. Nice.</li>
+    }
+  </ul>
+</section>

@@ -1,0 +1,79 @@
+@if (t(); as t) {
+  <a routerLink="/tickets" class="back">&larr; All tickets</a>
+  <header class="head">
+    <div>
+      <p class="eyebrow">#{{ t.id }} · {{ t.queue }}</p>
+      <h1>{{ t.subject }}</h1>
+      <p class="muted">{{ t.customer }} · opened {{ t.createdAt | date: 'MMM d, HH:mm' }}</p>
+    </div>
+    <app-sla [ticket]="t" />
+  </header>
+
+  <div class="detail">
+    <section class="card chat" aria-label="Conversation">
+      <div class="thread" #thread tabindex="0" aria-live="polite">
+        @for (c of t.comments; track c.id) {
+          @if (c.role === 'system') {
+            <p class="sys">{{ c.text }} · {{ c.at | date: 'HH:mm' }}</p>
+          } @else {
+            <article class="msg" [class.mine]="c.role === 'agent'" [class.note]="c.internal">
+              <header>
+                <b>{{ c.author }}</b>
+                @if (c.internal) { <span class="tag">Internal note</span> }
+                <time>{{ c.at | date: 'MMM d, HH:mm' }}</time>
+              </header>
+              <p>{{ c.text }}</p>
+            </article>
+          }
+        }
+      </div>
+      <form class="composer" (ngSubmit)="send()">
+        <label class="sr-only" for="reply">Write a reply</label>
+        <textarea id="reply" name="text" rows="3" [(ngModel)]="text" [placeholder]="internal() ? 'Internal note, hidden from the customer…' : 'Reply to the customer…'" maxlength="2000"></textarea>
+        <div class="bar">
+          <label class="check"><input type="checkbox" [checked]="internal()" (change)="internal.set(!internal())" /> Internal note</label>
+          <button class="btn primary" type="submit" [disabled]="!text.trim()">{{ internal() ? 'Add note' : 'Send reply' }}</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="card props" aria-label="Properties">
+      <label>Status
+        <select [ngModel]="t.status" (ngModelChange)="setStatus($event)">
+          @for (s of statuses; track s) { <option [value]="s">{{ label[s] }}</option> }
+        </select>
+      </label>
+      <label>Priority
+        <select [ngModel]="t.priority" (ngModelChange)="setPriority($event)">
+          @for (p of priorities; track p) { <option [value]="p">{{ p }}</option> }
+        </select>
+      </label>
+      <label>Queue
+        <select [ngModel]="t.queue" (ngModelChange)="setQueue($event)">
+          @for (q of queues; track q) { <option>{{ q }}</option> }
+        </select>
+      </label>
+      <label>Assignee
+        <select [ngModel]="t.assignee ?? ''" (ngModelChange)="assign($event)">
+          <option value="">Unassigned</option>
+          @for (a of agents; track a) { <option>{{ a }}</option> }
+        </select>
+      </label>
+      <dl>
+        <dt>SLA target</dt><dd>{{ sla[t.priority] }}h to resolve</dd>
+        <dt>Due</dt><dd>{{ due(t) | date: 'MMM d, HH:mm' }}</dd>
+        @if (t.resolvedAt) { <dt>Resolved</dt><dd>{{ t.resolvedAt | date: 'MMM d, HH:mm' }}</dd> }
+      </dl>
+      @if (t.status !== 'resolved') {
+        <button class="btn primary" type="button" (click)="setStatus('resolved')">Mark as resolved</button>
+      } @else {
+        <button class="btn" type="button" (click)="setStatus('open')">Reopen</button>
+      }
+    </aside>
+  </div>
+} @else {
+  <div class="card empty">
+    <h2>Ticket not found</h2>
+    <a routerLink="/tickets" class="btn primary">Back to tickets</a>
+  </div>
+}
